@@ -12,24 +12,23 @@ export function ColorSwatch({ entry }: Props) {
   const textColor = luminance > 0.5 ? '#000000' : '#FFFFFF';
 
   return (
-    <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 bg-white shadow-sm">
+    <div className="group border border-gray-100 rounded-xl overflow-hidden bg-white hover:shadow-md transition-shadow">
+      {/* Swatch block */}
       <div
-        className="w-12 h-12 rounded-md flex-shrink-0 border border-gray-100"
+        className="w-full h-20 relative"
         style={{ backgroundColor: entry.hex }}
-        aria-label={`Color swatch: ${entry.hex}`}
-        title={entry.hex}
       >
         <span
-          className="w-full h-full flex items-center justify-center text-[10px] font-mono font-bold opacity-0 hover:opacity-100 transition-opacity"
+          className="absolute inset-0 flex items-center justify-center text-xs font-mono font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
           style={{ color: textColor }}
         >
           {entry.hex}
         </span>
       </div>
-      <div className="min-w-0">
-        <p className="font-mono text-sm font-semibold text-gray-900">{entry.hex}</p>
-        <p className="text-xs text-gray-500 truncate" title={entry.source}>{entry.source}</p>
-        <p className="text-xs text-gray-400">{entry.property}</p>
+      {/* Meta */}
+      <div className="px-3 py-2.5">
+        <p className="font-mono text-xs font-semibold text-black tracking-tight">{entry.hex}</p>
+        <p className="text-[11px] text-gray-400 truncate mt-0.5" title={entry.source}>{entry.source}</p>
       </div>
     </div>
   );

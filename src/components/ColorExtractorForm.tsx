@@ -40,20 +40,20 @@ export function ColorExtractorForm({ onResults, onError }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-3 w-full max-w-2xl">
+    <form onSubmit={handleSubmit} className="flex gap-2 w-full max-w-xl mx-auto">
       <input
         type="text"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        placeholder="https://example.com"
+        placeholder="stripe.com"
         required
         disabled={loading}
-        className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 text-sm text-black"
+        className="flex-1 px-4 py-3 border border-gray-200 rounded-lg text-sm text-black placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent disabled:opacity-50 transition"
       />
       <button
         type="submit"
         disabled={loading}
-        className="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg disabled:opacity-50 hover:bg-blue-700 transition-colors whitespace-nowrap"
+        className="px-5 py-3 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-900 disabled:opacity-50 transition whitespace-nowrap"
       >
         {loading ? (
           <span className="flex items-center gap-2">

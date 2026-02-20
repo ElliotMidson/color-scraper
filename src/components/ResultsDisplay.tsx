@@ -23,29 +23,34 @@ export function ResultsDisplay({ data }: Props) {
   const totalColors = CATEGORIES.reduce((sum, c) => sum + data[c.key].length, 0);
 
   return (
-    <div className="w-full max-w-4xl space-y-8">
-      <div className="flex items-center justify-between text-sm text-gray-500 border-b border-gray-200 pb-4">
+    <div className="w-full space-y-12">
+
+      {/* Summary bar */}
+      <div className="flex items-center justify-between pb-5 border-b border-gray-100">
         <div>
-          Scraped <span className="font-mono text-gray-700">{data.url}</span>
+          <p className="text-xs font-medium tracking-widest uppercase text-gray-400 mb-1">Results</p>
+          <p className="text-sm font-medium text-black truncate max-w-sm">{data.url}</p>
         </div>
-        <div>
-          {totalColors} unique colors &middot; {new Date(data.scrapedAt).toLocaleTimeString()}
+        <div className="text-right">
+          <p className="text-2xl font-bold text-black">{totalColors}</p>
+          <p className="text-xs text-gray-400">colors found</p>
         </div>
       </div>
 
+      {/* Categories */}
       {CATEGORIES.map(({ key, label, description }) => {
         const entries = data[key];
         if (entries.length === 0) return null;
         return (
           <section key={key}>
-            <div className="mb-3">
-              <h2 className="text-base font-semibold text-gray-800">
-                {label}
-                <span className="ml-2 text-sm font-normal text-gray-400">({entries.length})</span>
-              </h2>
-              <p className="text-xs text-gray-400 mt-0.5">{description}</p>
+            <div className="flex items-baseline justify-between mb-4">
+              <div>
+                <h2 className="text-sm font-semibold text-black tracking-tight">{label}</h2>
+                <p className="text-xs text-gray-400 mt-0.5">{description}</p>
+              </div>
+              <span className="text-xs font-mono text-gray-400 ml-4 shrink-0">{entries.length}</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
               {entries.map((entry, i) => (
                 <ColorSwatch key={`${entry.hex}-${i}`} entry={entry} />
               ))}
@@ -54,11 +59,12 @@ export function ResultsDisplay({ data }: Props) {
         );
       })}
 
-      <details className="mt-6">
-        <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700 select-none">
+      {/* Raw JSON */}
+      <details className="border border-gray-100 rounded-xl overflow-hidden">
+        <summary className="cursor-pointer px-4 py-3 text-xs font-medium text-gray-500 hover:text-black hover:bg-gray-50 transition select-none">
           View raw JSON
         </summary>
-        <pre className="mt-3 p-4 bg-gray-50 rounded-lg text-xs overflow-auto max-h-96 border border-gray-200 text-gray-700">
+        <pre className="px-4 py-4 bg-gray-50 text-xs overflow-auto max-h-96 text-gray-600 border-t border-gray-100">
           {JSON.stringify(data, null, 2)}
         </pre>
       </details>

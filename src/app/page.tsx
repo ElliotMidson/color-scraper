@@ -20,27 +20,38 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 py-16 px-4">
-      <div className="max-w-4xl mx-auto space-y-10">
-        <header className="text-center space-y-2">
-          <h1 className="text-4xl font-bold text-gray-900">Color Extractor</h1>
-          <p className="text-gray-500 text-sm">
-            Enter any URL to extract its color palette from computed CSS styles — buttons, backgrounds, containers, and text.
-          </p>
-        </header>
+    <div className="min-h-screen bg-white">
+      {/* Nav */}
+      <nav className="border-b border-gray-100 px-6 py-4 flex items-center justify-between max-w-7xl mx-auto">
+        <span className="text-sm font-semibold tracking-tight text-black">Color Scraper</span>
+        <span className="text-xs text-gray-400">by Elliot Midson</span>
+      </nav>
 
-        <div className="flex justify-center">
+      {/* Hero */}
+      <section className="dot-grid border-b border-gray-100">
+        <div className="max-w-4xl mx-auto px-6 py-24 text-center">
+          <p className="text-xs font-medium tracking-widest uppercase text-gray-400 mb-6">
+            Color Extraction Tool
+          </p>
+          <h1 className="text-5xl sm:text-6xl font-bold tracking-tight text-black leading-tight mb-6">
+            Extract any website's<br />color palette
+          </h1>
+          <p className="text-gray-500 text-base max-w-xl mx-auto mb-10">
+            Paste a URL and instantly get every color — buttons, backgrounds, containers, and text — extracted directly from computed CSS styles.
+          </p>
           <ColorExtractorForm onResults={handleResults} onError={handleError} />
         </div>
+      </section>
 
+      {/* Results */}
+      <section className="max-w-4xl mx-auto px-6 py-16">
         {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm max-w-2xl mx-auto">
-            <span className="font-medium">Error:</span> {error}
+          <div className="mb-8 px-4 py-3 border border-red-200 bg-red-50 rounded-lg text-red-600 text-sm">
+            {error}
           </div>
         )}
-
         {results && <ResultsDisplay data={results} />}
-      </div>
-    </main>
+      </section>
+    </div>
   );
 }
