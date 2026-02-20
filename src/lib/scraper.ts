@@ -19,7 +19,7 @@ async function getBrowser(): Promise<Browser> {
     // to avoid the "bin directory does not exist" build error from the full package
     const chromium = (await import('@sparticuz/chromium-min')).default;
     const executablePath = await chromium.executablePath(
-      'https://github.com/Sparticuz/chromium/releases/download/v143.0.4/chromium-v143.0.4-pack.tar'
+      'https://github.com/Sparticuz/chromium/releases/download/v143.0.4/chromium-v143.0.4-pack.x64.tar'
     );
     browser = await puppeteerCore.launch({
       args: chromium.args,
