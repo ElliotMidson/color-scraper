@@ -23,17 +23,10 @@ async function getBrowser(): Promise<Browser> {
       headless: true,
     });
   } else {
-    // Local dev: use the system Chrome or the one installed by puppeteer-core
-    const executablePath =
-      process.platform === 'darwin'
-        ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-        : process.platform === 'win32'
-        ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
-        : '/usr/bin/google-chrome';
-
-    browser = await puppeteerCore.launch({
+    // Local dev: use full puppeteer which bundles its own Chromium
+    const puppeteer = (await import('puppeteer')).default;
+    browser = await puppeteer.launch({
       headless: true,
-      executablePath,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -42,7 +35,7 @@ async function getBrowser(): Promise<Browser> {
         '--no-first-run',
         '--no-zygote',
       ],
-    });
+    }) as unknown as Browser;
   }
 
   return browser;
