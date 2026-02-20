@@ -15,11 +15,15 @@ async function getBrowser(): Promise<Browser> {
   const isVercel = !!process.env.VERCEL;
 
   if (isVercel) {
-    // Serverless: use @sparticuz/chromium which ships a Lambda-compatible binary
-    const chromium = (await import('@sparticuz/chromium')).default;
+    // Serverless: use @sparticuz/chromium-min which fetches the binary at runtime
+    // to avoid the "bin directory does not exist" build error from the full package
+    const chromium = (await import('@sparticuz/chromium-min')).default;
+    const executablePath = await chromium.executablePath(
+      'https://github.com/Sparticuz/chromium/releases/download/v143.0.4/chromium-v143.0.4-pack.tar'
+    );
     browser = await puppeteerCore.launch({
       args: chromium.args,
-      executablePath: await chromium.executablePath(),
+      executablePath,
       headless: true,
     });
   } else {
