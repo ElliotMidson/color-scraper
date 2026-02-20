@@ -1,4 +1,4 @@
-import puppeteer, { Browser } from 'puppeteer';
+import puppeteerCore, { Browser } from 'puppeteer-core';
 import { extractColorsFromDOM } from './domInspector';
 import {
   normalizeColor,
@@ -11,17 +11,40 @@ let browser: Browser | null = null;
 
 async function getBrowser(): Promise<Browser> {
   if (browser && browser.connected) return browser;
-  browser = await puppeteer.launch({
-    headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--no-first-run',
-      '--no-zygote',
-    ],
-  });
+
+  const isVercel = !!process.env.VERCEL;
+
+  if (isVercel) {
+    // Serverless: use @sparticuz/chromium which ships a Lambda-compatible binary
+    const chromium = (await import('@sparticuz/chromium')).default;
+    browser = await puppeteerCore.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    });
+  } else {
+    // Local dev: use the system Chrome or the one installed by puppeteer-core
+    const executablePath =
+      process.platform === 'darwin'
+        ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+        : process.platform === 'win32'
+        ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+        : '/usr/bin/google-chrome';
+
+    browser = await puppeteerCore.launch({
+      headless: true,
+      executablePath,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--no-first-run',
+        '--no-zygote',
+      ],
+    });
+  }
+
   return browser;
 }
 
