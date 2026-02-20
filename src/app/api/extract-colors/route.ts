@@ -31,7 +31,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown scraping error';
+    const stack = err instanceof Error ? err.stack : undefined;
     console.error('[extract-colors] Error:', message);
-    return NextResponse.json({ error: message, url }, { status: 500 });
+    console.error('[extract-colors] Stack:', stack);
+    return NextResponse.json({ error: message, stack, url }, { status: 500 });
   }
 }
