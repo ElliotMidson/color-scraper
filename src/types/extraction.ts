@@ -6,6 +6,7 @@ export type SemanticColorRole =
   | 'subheading'
   | 'body'
   | 'link'
+  | 'headerCta'
   | 'button'
   | 'border';
 

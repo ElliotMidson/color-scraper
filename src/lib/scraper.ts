@@ -119,6 +119,7 @@ function processSemanticRaw(
     'subheading',
     'body',
     'link',
+    'headerCta',
     'button',
     'border',
   ]);

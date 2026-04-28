@@ -177,9 +177,30 @@ export function extractSiteDesignTokens() {
     pushColor('link', el, 'color');
   });
 
+  // Header / nav CTAs — primary brand color signal, checked before generic buttons
+  const headerCtaContainers = 'header, nav, [role="navigation"], [class*="navbar"], [class*="nav-bar"], [class*="header"]';
+  Array.from(document.querySelectorAll(headerCtaContainers))
+    .filter(isVisible)
+    .forEach((container) => {
+      Array.from(container.querySelectorAll('a, button'))
+        .filter((el) => isVisible(el))
+        .slice(0, 15)
+        .forEach((el) => {
+          const bg = getStyle(el, 'background-color');
+          if (!bg || bg === 'transparent' || bg === 'none' || bg === 'rgba(0, 0, 0, 0)') return;
+          const br = parseFloat(getStyle(el, 'border-radius'));
+          const pl = parseFloat(getStyle(el, 'padding-left'));
+          const pr = parseFloat(getStyle(el, 'padding-right'));
+          if (br < 1 && pl < 6 && pr < 6) return; // skip unstyled plain links
+          pushSurfaceColors('headerCta', el);
+          pushColor('headerCta', el, 'color');
+          pushColor('headerCta', el, 'border-color');
+        });
+    });
+
   // Buttons
   const buttonSel =
-    'button, [type="submit"], [role="button"], a.btn, a.button, header a[class*="button"]';
+    'button, [type="submit"], [role="button"], a.btn, a.button';
   sampleElements(buttonSel, 25).forEach((el) => {
     pushSurfaceColors('button', el);
     pushColor('button', el, 'color');

@@ -5,6 +5,7 @@ import type {
   LogoOrMarkEntry,
   SemanticColorEntry,
 } from '@/types/extraction';
+import type { BrandColorHierarchy } from '@/lib/colorUtils';
 
 export type LogoUploadId = `upload-${string}`;
 /** Scraped logo ids from `logoEntryId()` plus uploads */
@@ -30,6 +31,7 @@ export interface StyleGuidePayload {
   logos: Array<{ scraped?: LogoOrMarkEntry; index?: number; uploaded?: UploadedLogo }>;
   fonts: FontEntry[];
   colorsByRole: Array<{ role: string; label: string; entries: SemanticColorEntry[] }>;
+  brandColors: BrandColorHierarchy;
   imagery: ImageryEntry[];
   thumbnailByUrl: Map<string, string>;
   brand: BrandAnalysisResult | null;

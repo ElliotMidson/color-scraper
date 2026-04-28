@@ -3,6 +3,7 @@ import type { StyleGuidePayload, WizardSelections } from '@/types/wizard';
 import type { BrandAnalysisResult } from '@/types/extraction';
 import { colorSelectionId, fontId, imageId, logoEntryId, normalizeColorHex } from '@/lib/wizardIds';
 import { prioritizeButtonFirst, ROLE_LABELS, ROLE_ORDER } from '@/lib/wizardLabels';
+import { computeBrandColors } from '@/lib/colorUtils';
 
 export function buildStyleGuidePayload(
   data: SiteExtractionResult,
@@ -36,6 +37,8 @@ export function buildStyleGuidePayload(
     })).filter((g) => g.entries.length > 0)
   );
 
+  const brandColors = computeBrandColors(colorsByRole);
+
   const imagery = data.imagery.filter((_, i) => s.keptImageIds.has(imageId(i)));
 
   const thumbnailByUrl = new Map(data.thumbnails.map((t) => [t.url, t.dataUrl]));
@@ -46,6 +49,7 @@ export function buildStyleGuidePayload(
     logos,
     fonts,
     colorsByRole,
+    brandColors,
     imagery,
     thumbnailByUrl,
     brand,

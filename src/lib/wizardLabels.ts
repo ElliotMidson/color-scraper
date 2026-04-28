@@ -8,17 +8,19 @@ export const ROLE_ORDER: SemanticColorRole[] = [
   'subheading',
   'body',
   'link',
+  'headerCta',
   'button',
   'border',
 ];
 
-/** Put button colors first in the guide and color editor (Figma-style accent strip). */
+/** Put header CTAs then buttons first (primary brand color signal). */
 export function prioritizeButtonFirst<
   T extends { role: SemanticColorRole; entries: readonly unknown[] },
 >(groups: T[]): T[] {
+  const headerCta = groups.find((g) => g.role === 'headerCta');
   const button = groups.find((g) => g.role === 'button');
-  if (!button) return groups;
-  return [button, ...groups.filter((g) => g.role !== 'button')];
+  const rest = groups.filter((g) => g.role !== 'headerCta' && g.role !== 'button');
+  return [...(headerCta ? [headerCta] : []), ...(button ? [button] : []), ...rest];
 }
 
 export const ROLE_LABELS: Record<SemanticColorRole, string> = {
@@ -29,6 +31,7 @@ export const ROLE_LABELS: Record<SemanticColorRole, string> = {
   subheading: 'Subheadings',
   body: 'Body text',
   link: 'Links',
+  headerCta: 'Header CTAs',
   button: 'Buttons',
   border: 'Borders',
 };

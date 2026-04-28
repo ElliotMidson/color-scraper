@@ -177,3 +177,56 @@ export function deduplicateColors(entries: ColorEntry[]): ColorEntry[] {
   }
   return Array.from(seen.values());
 }
+
+export interface BrandColorHierarchy {
+  primary: string | null;
+  secondary: string | null;
+  tertiary: string | null;
+}
+
+/**
+ * Derives primary/secondary/tertiary brand colors from semantic color groups.
+ * Priority: headerCta backgrounds → button backgrounds → link colors.
+ * Near-white (lum > 0.85) and near-black (lum < 0.03) are excluded as these
+ * are backgrounds/text, not brand accent colors.
+ */
+export function computeBrandColors(
+  colorsByRole: Array<{ role: string; entries: { hex: string; property: string }[] }>
+): BrandColorHierarchy {
+  const candidates: string[] = [];
+  const seen = new Set<string>();
+
+  function addFromRole(role: string, bgFirst = true) {
+    const group = colorsByRole.find((g) => g.role === role);
+    if (!group) return;
+    const entries = bgFirst
+      ? [
+          ...group.entries.filter((e) => e.property.includes('background')),
+          ...group.entries.filter((e) => !e.property.includes('background')),
+        ]
+      : group.entries;
+    for (const e of entries) {
+      const hex = e.hex.toUpperCase();
+      if (seen.has(hex)) continue;
+      try {
+        const lum = chroma(hex).luminance();
+        if (lum <= 0.85 && lum >= 0.03) {
+          seen.add(hex);
+          candidates.push(hex);
+        }
+      } catch {
+        // skip unparseable
+      }
+    }
+  }
+
+  addFromRole('headerCta', true);
+  addFromRole('button', true);
+  addFromRole('link', false);
+
+  return {
+    primary: candidates[0] ?? null,
+    secondary: candidates[1] ?? null,
+    tertiary: candidates[2] ?? null,
+  };
+}

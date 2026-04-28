@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { InlineSvgPreview } from '@/components/InlineSvgPreview';
 import { normalizeColorHex } from '@/lib/wizardIds';
 import { IMAGERY_ROLE_LABELS, IMAGERY_ROLE_ORDER } from '@/lib/wizardLabels';
-import type { FontEntry, ImageryEntry, ImageryRole } from '@/types/extraction';
+import type { FontEntry, ImageryEntry, ImageryRole, LogoOrMarkEntry } from '@/types/extraction';
 import type { StyleGuidePayload } from '@/types/wizard';
 
 export type StyleGuideSection = 'logos' | 'fonts' | 'colors' | 'imagery' | 'brand';
@@ -54,6 +54,40 @@ const BENTO_SQUARE: CSSProperties = {
   width: '100%',
   minWidth: 0,
 };
+
+function hexLuminance(hex: string): number {
+  if (hex.length !== 7) return 1;
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+/** Returns true when an inline SVG has no dark fills/strokes (i.e. it's a light/white logo). */
+function svgIsLight(markup: string): boolean {
+  const re = /(?:fill|stroke)=["']([^"']+)["']/gi;
+  let m: RegExpMatchArray | null;
+  let hasDark = false;
+  while ((m = re.exec(markup)) !== null) {
+    const v = m[1].trim().toLowerCase();
+    if (v === 'none' || v === 'transparent' || v === 'currentcolor') continue;
+    if (v.startsWith('#')) {
+      const expanded = v.length === 4
+        ? '#' + v[1] + v[1] + v[2] + v[2] + v[3] + v[3]
+        : v;
+      if (hexLuminance(expanded) < 0.35) { hasDark = true; break; }
+    }
+  }
+  return !hasDark;
+}
+
+function logoNeedsDarkBg(logo: LogoOrMarkEntry, pageBgDark: boolean): boolean {
+  if (logo.kind === 'svg-inline' && logo.inlineSvgPreview) {
+    return svgIsLight(logo.inlineSvgPreview);
+  }
+  return pageBgDark;
+}
 
 /** Tone-of-voice gradient (Figma ~94.64deg, black → light). */
 const BRAND_GRADIENT_TEXT: CSSProperties = {
@@ -339,9 +373,17 @@ export function StyleGuidePreview({ payload, onSectionClick }: Props) {
     g.entries.map((e) => normalizeColorHex(e.hex))
   );
   const themeStyle = themeVarsFromHexes(flatHexes);
-  const paletteTop = flatHexes[0] ?? SG.lime;
-  const paletteMid = flatHexes[1] ?? SG.warmGrey;
-  const paletteBot = flatHexes[2] ?? SG.ink;
+
+  const { primary, secondary, tertiary } = payload.brandColors;
+  const paletteTop = primary ?? SG.lime;
+  const paletteMid = secondary ?? SG.warmGrey;
+  const paletteBot = tertiary ?? SG.ink;
+
+  const pageBgDark = (() => {
+    const bg = payload.colorsByRole.find((g) => g.role === 'pageBackground');
+    if (!bg?.entries.length) return false;
+    return hexLuminance(normalizeColorHex(bg.entries[0].hex)) < 0.15;
+  })();
 
   const embeddedFontCss = useMemo(() => {
     return payload.fonts
@@ -440,8 +482,10 @@ export function StyleGuidePreview({ payload, onSectionClick }: Props) {
         }}
       >
         {/* Logo tile */}
-        {(payload.logos.length > 0 || click) &&
-          tileShell(
+        {(payload.logos.length > 0 || click) && (() => {
+          const firstScraped = payload.logos.find((l) => l.scraped)?.scraped;
+          const needsDark = firstScraped ? logoNeedsDarkBg(firstScraped, pageBgDark) : false;
+          return tileShell(
             click,
             onSectionClick ? () => onSectionClick('logos') : undefined,
             'Edit brand',
@@ -455,9 +499,10 @@ export function StyleGuidePreview({ payload, onSectionClick }: Props) {
               justifyContent: 'center',
               padding: SG.tilePadLg,
               gap: 20,
+              background: needsDark ? SG.ink : SG.card,
             },
             <>
-              <TileLabel>Brand</TileLabel>
+              <TileLabel variant={needsDark ? 'light' : 'dark'}>Brand</TileLabel>
               {payload.logos.length === 0 ? (
                 <p className="ch-type-system-text-sm" style={{ color: SG.labelMuted, textAlign: 'center' }}>
                   No logo in guide — tap to add or choose marks
@@ -544,7 +589,8 @@ export function StyleGuidePreview({ payload, onSectionClick }: Props) {
                 ))
               )}
             </>
-          )}
+          );
+        })()}
 
         {/* Color palette tile — Figma split: top band + bottom half / half */}
         {(payload.colorsByRole.length > 0 || click) &&
@@ -577,10 +623,31 @@ export function StyleGuidePreview({ payload, onSectionClick }: Props) {
                 </div>
               ) : (
                 <>
-                  <div style={{ flex: '1 1 50%', minHeight: 0, background: paletteTop }} />
+                  <div style={{ flex: '1 1 50%', minHeight: 0, background: paletteTop, position: 'relative' }}>
+                    <span style={{
+                      position: 'absolute', bottom: 8, left: 10,
+                      fontSize: 10, fontWeight: 600, letterSpacing: '0.06em',
+                      color: hexLuminance(paletteTop) > 0.4 ? 'rgba(5,5,5,0.45)' : 'rgba(255,255,255,0.55)',
+                      textTransform: 'uppercase',
+                    }}>Primary</span>
+                  </div>
                   <div style={{ flex: '1 1 50%', minHeight: 0, display: 'flex' }}>
-                    <div style={{ flex: 1, background: paletteMid }} />
-                    <div style={{ flex: 1, background: paletteBot }} />
+                    <div style={{ flex: 1, background: paletteMid, position: 'relative' }}>
+                      <span style={{
+                        position: 'absolute', bottom: 8, left: 10,
+                        fontSize: 10, fontWeight: 600, letterSpacing: '0.06em',
+                        color: hexLuminance(paletteMid) > 0.4 ? 'rgba(5,5,5,0.45)' : 'rgba(255,255,255,0.55)',
+                        textTransform: 'uppercase',
+                      }}>2nd</span>
+                    </div>
+                    <div style={{ flex: 1, background: paletteBot, position: 'relative' }}>
+                      <span style={{
+                        position: 'absolute', bottom: 8, left: 10,
+                        fontSize: 10, fontWeight: 600, letterSpacing: '0.06em',
+                        color: hexLuminance(paletteBot) > 0.4 ? 'rgba(5,5,5,0.45)' : 'rgba(255,255,255,0.55)',
+                        textTransform: 'uppercase',
+                      }}>3rd</span>
+                    </div>
                   </div>
                 </>
               )}
