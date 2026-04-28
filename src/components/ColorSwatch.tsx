@@ -1,35 +1,91 @@
-import { ColorEntry } from '@/types/colors';
+import type { SemanticColorEntry } from '@/types/extraction';
 
 interface Props {
-  entry: ColorEntry;
+  entry: SemanticColorEntry;
+  selected?: boolean;
+  onToggle?: () => void;
 }
 
-export function ColorSwatch({ entry }: Props) {
+export function ColorSwatch({ entry, selected = true, onToggle }: Props) {
   const r = parseInt(entry.hex.slice(1, 3), 16);
   const g = parseInt(entry.hex.slice(3, 5), 16);
   const b = parseInt(entry.hex.slice(5, 7), 16);
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  const textColor = luminance > 0.5 ? '#000000' : '#FFFFFF';
+  const overlayHex = luminance > 0.5 ? '#000000' : '#ffffff';
 
-  return (
-    <div className="group border border-gray-100 rounded-xl overflow-hidden bg-white hover:shadow-md transition-shadow">
-      {/* Swatch block */}
+  const body = (
+    <>
       <div
         className="w-full h-20 relative"
         style={{ backgroundColor: entry.hex }}
       >
         <span
-          className="absolute inset-0 flex items-center justify-center text-xs font-mono font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ color: textColor }}
+          className="absolute inset-0 flex items-center justify-center font-mono text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity ch-type-system-text-xs"
+          style={{ color: overlayHex }}
         >
           {entry.hex}
         </span>
       </div>
-      {/* Meta */}
-      <div className="px-3 py-2.5">
-        <p className="font-mono text-xs font-semibold text-black tracking-tight">{entry.hex}</p>
-        <p className="text-[11px] text-gray-400 truncate mt-0.5" title={entry.source}>{entry.source}</p>
+      <div style={{ padding: 'var(--space-3)' }}>
+        <p
+          className="font-mono text-xs font-semibold tracking-tight"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          {entry.hex}
+        </p>
+        <p className="ch-type-system-label-xs" style={{ marginTop: 'var(--space-1)' }}>
+          {entry.role}
+        </p>
+        <p
+          className="ch-type-system-text-xs truncate"
+          style={{ marginTop: 'var(--space-1)' }}
+          title={entry.source}
+        >
+          {entry.property} · {entry.source}
+        </p>
       </div>
+    </>
+  );
+
+  if (onToggle) {
+    return (
+      <div
+        className="group ch-swatch-selectable-wrap"
+        data-selected={selected ? 'true' : 'false'}
+      >
+        <button type="button" className="ch-swatch-selectable-hit" onClick={onToggle}>
+          {body}
+        </button>
+        <div
+          style={{
+            padding: '0 var(--space-3) var(--space-3)',
+            display: 'flex',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <label
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              cursor: 'pointer',
+              padding: 'var(--space-1)',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={onToggle}
+              aria-label="Include in style guide"
+            />
+          </label>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="group ch-card-selectable" data-selected="true">
+      {body}
     </div>
   );
 }

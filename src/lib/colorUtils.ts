@@ -1,38 +1,164 @@
+import chroma from 'chroma-js';
 import { ColorEntry } from '@/types/colors';
 
-export function rgbToHex(rgb: string): string | null {
-  const match = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/);
-  if (!match) return null;
+function clamp255(n: number): number {
+  return Math.min(255, Math.max(0, n));
+}
 
-  const r = parseInt(match[1], 10);
-  const g = parseInt(match[2], 10);
-  const b = parseInt(match[3], 10);
-
+function tripletToHex(r: number, g: number, b: number): string {
   return (
     '#' +
     [r, g, b]
-      .map((v) => v.toString(16).padStart(2, '0'))
+      .map((v) => clamp255(Math.round(v)).toString(16).padStart(2, '0'))
       .join('')
       .toUpperCase()
   );
 }
 
+/** Parse alpha after `/`; returns null if missing (fully opaque). */
+function parseTrailingAlpha(inner: string): { body: string; alpha: number | null } {
+  const slash = inner.indexOf('/');
+  if (slash < 0) return { body: inner.trim(), alpha: null };
+  const body = inner.slice(0, slash).trim();
+  const raw = inner.slice(slash + 1).trim();
+  if (!raw) return { body, alpha: null };
+  if (raw.endsWith('%')) {
+    const p = parseFloat(raw.slice(0, -1));
+    if (Number.isNaN(p)) return { body, alpha: null };
+    return { body, alpha: Math.min(1, Math.max(0, p / 100)) };
+  }
+  const a = parseFloat(raw);
+  if (Number.isNaN(a)) return { body, alpha: null };
+  return { body, alpha: Math.min(1, Math.max(0, a)) };
+}
+
+function splitColorArgs(body: string): string[] {
+  const t = body.trim();
+  if (t.includes(',')) {
+    return t.split(',').map((s) => s.trim()).filter(Boolean);
+  }
+  return t.split(/\s+/).filter(Boolean);
+}
+
+/**
+ * CSS Color 4 rgb()/rgba(): comma or space syntax, %, optional `/` alpha,
+ * and 0–1 channel scaling when all channels are in [0, 1].
+ */
+export function rgbToHex(rgb: string): string | null {
+  const m = rgb.trim().match(/^rgba?\(\s*([\s\S]+)\)$/i);
+  if (!m) return null;
+  const { body, alpha } = parseTrailingAlpha(m[1]);
+  if (alpha === 0) return null;
+
+  const parts = splitColorArgs(body);
+  if (parts.length < 3) return null;
+
+  const a = parts[0];
+  const b = parts[1];
+  const c = parts[2];
+  if (!a || !b || !c) return null;
+
+  const parseChan = (s: string): { v: number; pct: boolean } | null => {
+    if (s.endsWith('%')) {
+      const n = parseFloat(s.slice(0, -1));
+      if (Number.isNaN(n)) return null;
+      return { v: n, pct: true };
+    }
+    const n = parseFloat(s);
+    if (Number.isNaN(n)) return null;
+    return { v: n, pct: false };
+  };
+
+  const ca = parseChan(a);
+  const cb = parseChan(b);
+  const cc = parseChan(c);
+  if (!ca || !cb || !cc) return null;
+
+  let r: number;
+  let g: number;
+  let bl: number;
+
+  const anyPct = ca.pct || cb.pct || cc.pct;
+  if (anyPct) {
+    r = ca.pct ? (ca.v / 100) * 255 : ca.v;
+    g = cb.pct ? (cb.v / 100) * 255 : cb.v;
+    bl = cc.pct ? (cc.v / 100) * 255 : cc.v;
+  } else {
+    const vals = [ca.v, cb.v, cc.v];
+    const use01 = vals.every((v) => v >= 0 && v <= 1);
+    if (use01) {
+      r = vals[0] * 255;
+      g = vals[1] * 255;
+      bl = vals[2] * 255;
+    } else {
+      r = vals[0];
+      g = vals[1];
+      bl = vals[2];
+    }
+  }
+
+  return tripletToHex(r, g, bl);
+}
+
+function labToHex(lab: string): string | null {
+  const s = lab.trim();
+  if (!/^lab\(/i.test(s)) return null;
+  try {
+    const c = chroma(s);
+    if (c.alpha() === 0) return null;
+    return c.alpha(1).hex('rgb').toUpperCase();
+  } catch {
+    return null;
+  }
+}
+
+function isInvisibleColor(s: string): boolean {
+  const t = s.trim().toLowerCase().replace(/\s+/g, ' ');
+  if (t === 'transparent' || t === 'none') return true;
+  if (t === 'rgba(0, 0, 0, 0)' || t === 'rgba(0,0,0,0)') return true;
+  if (/^rgba?\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\s*\)$/.test(t)) return true;
+  if (/^rgba?\(\s*0\s+0\s+0\s*\/\s*0\s*\)$/.test(t)) return true;
+  return false;
+}
+
 export function normalizeColor(cssColor: string): string | null {
-  if (!cssColor || cssColor === 'transparent' || cssColor === 'none') return null;
-  if (cssColor === 'rgba(0, 0, 0, 0)') return null;
+  const s = cssColor.trim();
+  if (!s || isInvisibleColor(s)) return null;
 
-  if (cssColor.startsWith('rgb')) return rgbToHex(cssColor);
+  if (s.startsWith('#')) {
+    const body = s.slice(1).toUpperCase();
+    if (body.length === 3) {
+      return '#' + body.split('').map((c) => c + c).join('');
+    }
+    if (body.length === 6) return '#' + body;
+    if (body.length === 8) return '#' + body.slice(0, 6);
+    return null;
+  }
 
-  if (cssColor.startsWith('#')) {
-    return cssColor.length === 4
-      ? '#' +
-          cssColor
-            .slice(1)
-            .split('')
-            .map((c) => c + c)
-            .join('')
-            .toUpperCase()
-      : cssColor.toUpperCase();
+  const lower = s.toLowerCase();
+  if (lower.startsWith('rgb')) {
+    return rgbToHex(s);
+  }
+  if (lower.startsWith('hsl')) {
+    try {
+      const c = chroma(s);
+      if (c.alpha() === 0) return null;
+      return c.alpha(1).hex('rgb').toUpperCase();
+    } catch {
+      return null;
+    }
+  }
+  if (lower.startsWith('lab(')) {
+    return labToHex(s);
+  }
+  if (lower.startsWith('lch(') || lower.startsWith('oklch(') || lower.startsWith('oklab(')) {
+    try {
+      const c = chroma(s);
+      if (c.alpha() === 0) return null;
+      return c.alpha(1).hex('rgb').toUpperCase();
+    } catch {
+      return null;
+    }
   }
 
   return null;

@@ -1,0 +1,112 @@
+/* Chronicle UI — curated tokens from layout.md (system chrome). */
+
+:root {
+  --primitive-white: #ffffff;
+  --primitive-gray-50: #f9f9f9;
+  --primitive-gray-100: #f5f5f5;
+  --primitive-gray-200: #e8e8e8;
+  --primitive-gray-300: #d0d0d0;
+  --primitive-gray-400: #aaaaaa;
+  --primitive-gray-500: #777777;
+  --primitive-gray-700: #333333;
+  --primitive-gray-900: #111111;
+  --primitive-black: #000000;
+
+  --color-surface-primary: var(--primitive-white);
+  --color-surface-secondary: var(--primitive-gray-100);
+  --color-surface-tertiary: var(--primitive-gray-50);
+  --color-surface-inverse: var(--primitive-gray-900);
+  --color-surface-overlay: var(--primitive-black);
+
+  --color-text-primary: var(--primitive-gray-900);
+  --color-text-secondary: var(--primitive-gray-500);
+  --color-text-tertiary: var(--primitive-gray-400);
+  --color-text-inverse: var(--primitive-white);
+  --color-text-disabled: var(--primitive-gray-400);
+
+  --color-action-primary: var(--primitive-gray-900);
+  --color-action-primary-hover: var(--primitive-gray-700);
+  --color-action-primary-text: var(--primitive-white);
+  --color-action-ghost-hover: var(--primitive-gray-100);
+  --color-action-ghost-active: var(--primitive-gray-200);
+
+  --color-border-default: var(--primitive-gray-300);
+  --color-border-subtle: var(--primitive-gray-200);
+  --color-border-focus: var(--primitive-gray-900);
+  --color-border-selected: var(--primitive-gray-900);
+  --color-border-disabled: var(--primitive-gray-200);
+
+  --color-feedback-error: #cc2222;
+  --color-feedback-success: #1a7a3c;
+  --color-feedback-warning: #cc7700;
+
+  --btn-primary-bg: var(--color-action-primary);
+  --btn-primary-bg-hover: var(--color-action-primary-hover);
+  --btn-primary-text: var(--color-action-primary-text);
+  --btn-ghost-border: var(--color-border-default);
+  --btn-ghost-bg-hover: var(--color-action-ghost-hover);
+  --btn-ghost-bg-active: var(--color-action-ghost-active);
+  --btn-disabled-text: var(--color-text-disabled);
+  --btn-disabled-bg: var(--color-surface-secondary);
+
+  --selection-indicator: var(--color-border-selected);
+  --selection-bg-hover: var(--color-surface-secondary);
+
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  --btn-padding-x-md: var(--space-4);
+  --btn-padding-y-md: var(--space-2);
+
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  --grid-gutter: var(--space-4);
+  --grid-margin: var(--space-6);
+  --grid-margin-lg: var(--space-8);
+  --container-lg: 1280px;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
+
+  --duration-fast: 100ms;
+  --duration-base: 200ms;
+  --ease-default: cubic-bezier(0.2, 0, 0, 1);
+
+  /* --font-inter set by next/font on html; fallback until then */
+  --font-inter: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Optional: add @font-face for ABC Diatype under public/fonts and reference here */
+  --font-brand: "ABC Diatype", "Helvetica Neue", Arial, sans-serif;
+  --font-system: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
+
+  /* Style guide canvas (§11 theme fallbacks) */
+  --theme-surface-base: #ffffff;
+  --theme-surface-raised: #f7f7f7;
+  --theme-text-primary: #111111;
+  --theme-text-secondary: #555555;
+  --theme-text-muted: #999999;
+  --theme-accent-primary: #111111;
+  --theme-accent-secondary: #555555;
+  --theme-border-default: #e0e0e0;
+  --theme-border-subtle: #efefef;
+  --theme-font-display: var(--font-brand);
+  --theme-font-body: var(--font-system);
+  --theme-radius-widget: 8px;
+  --theme-space-widget-padding: var(--space-4);
+  --theme-data-1: #111111;
+  --theme-data-2: #555555;
+  --theme-data-3: #999999;
+}
