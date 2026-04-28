@@ -107,6 +107,9 @@ export function SiteAuditWizard() {
       setBrandError(null);
       setPanel(null);
       setPhase('guide');
+      if (claudeApiKey.trim()) {
+        void runBrandAnalysis(result.url);
+      }
     } catch (e) {
       setScrapeError(e instanceof Error ? e.message : 'Unknown error');
     } finally {
@@ -191,8 +194,9 @@ export function SiteAuditWizard() {
     });
   }
 
-  async function runBrandAnalysis() {
-    if (!data) return;
+  async function runBrandAnalysis(urlOverride?: string) {
+    const targetUrl = urlOverride ?? data?.url;
+    if (!targetUrl) return;
     setBrandLoading(true);
     setBrandError(null);
     try {
@@ -200,7 +204,7 @@ export function SiteAuditWizard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          url: data.url,
+          url: targetUrl,
           ...(claudeApiKey.trim() ? { anthropicApiKey: claudeApiKey.trim() } : {}),
         }),
       });
@@ -1136,11 +1140,16 @@ export function SiteAuditWizard() {
                 set <code className="font-mono">ANTHROPIC_API_KEY</code> in .env.local. Runs only
                 when you click the button — not during the scrape.
               </p>
+              {!claudeApiKey.trim() && !brand && (
+                <p className="ch-error-box" style={{ marginBottom: 'var(--space-4)' }}>
+                  Please add a Claude API key to run brand summary.
+                </p>
+              )}
               <button
                 type="button"
                 className="ch-btn-primary"
-                disabled={brandLoading}
-                onClick={runBrandAnalysis}
+                disabled={brandLoading || !claudeApiKey.trim()}
+                onClick={() => void runBrandAnalysis()}
                 style={{ marginBottom: 'var(--space-4)' }}
               >
                 {brandLoading ? 'Analyzing…' : brand ? 'Run again' : 'Run AI brand summary'}

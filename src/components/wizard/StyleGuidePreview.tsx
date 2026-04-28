@@ -282,7 +282,7 @@ function CollageStrip({
 
 function brandVoiceBoardText(payload: StyleGuidePayload): string {
   if (!payload.brand) {
-    return "Ramp's tone is direct, results-oriented, and efficiency-obsessed — every line of copy is framed around time saved, money saved, or manual work eliminated. It's confident and slightly aggressive in how it positions against competitors, but grounded in concrete outcomes rather than hype.";
+    return 'Add a Claude API key and import a URL to generate the brand voice summary.';
   }
   const { toneOfVoice, keyFeaturesOrServices } = payload.brand;
   const voice = toneOfVoice.trim();
