@@ -7,10 +7,12 @@ export const maxDuration = 120;
 
 export async function POST(request: NextRequest) {
   let url: string;
+  let anthropicApiKey: string | undefined;
 
   try {
     const body = await request.json();
     url = body.url?.trim();
+    anthropicApiKey = typeof body.anthropicApiKey === 'string' ? body.anthropicApiKey.trim() : undefined;
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
@@ -28,11 +30,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
   }
 
-  if (!isBrandAiConfigured()) {
+  const overrides = anthropicApiKey ? { anthropicApiKey } : undefined;
+
+  if (!isBrandAiConfigured(overrides)) {
     return NextResponse.json(
       {
         error:
-          'No AI key configured. Set OPENAI_API_KEY and/or ANTHROPIC_API_KEY (or CLAUDE_API_KEY) in .env.local — see .env.example — then restart the dev server.',
+          'No AI key configured. Paste your Claude API key into the field on the left, or set OPENAI_API_KEY / ANTHROPIC_API_KEY in .env.local.',
       },
       { status: 503 }
     );
@@ -40,7 +44,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const { url: finalUrl, text } = await extractReadablePageText(url);
-    const { brand, model } = await analyzeBrandFromPageText(finalUrl, text);
+    const { brand, model } = await analyzeBrandFromPageText(finalUrl, text, overrides);
 
     const payload: BrandAnalysisApiResponse = {
       brand,

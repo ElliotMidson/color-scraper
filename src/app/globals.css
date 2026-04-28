@@ -44,3 +44,19 @@ body.page-body-dot-grid > * {
   );
   background-size: 24px 24px;
 }
+
+@keyframes sk-shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+.sk-pulse {
+  background: linear-gradient(
+    90deg,
+    #e0e0e0 25%,
+    #ebebeb 50%,
+    #e0e0e0 75%
+  );
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.6s ease-in-out infinite;
+}

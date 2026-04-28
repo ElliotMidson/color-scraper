@@ -65,6 +65,7 @@ export function SiteAuditWizard() {
   const [brandLoading, setBrandLoading] = useState(false);
   const [brandError, setBrandError] = useState<string | null>(null);
   const [extraUrlsOpen, setExtraUrlsOpen] = useState(false);
+  const [claudeApiKey, setClaudeApiKey] = useState('');
 
   const thumbByUrl = useMemo(
     () => (data ? new Map(data.thumbnails.map((t) => [t.url, t.dataUrl])) : new Map()),
@@ -198,7 +199,10 @@ export function SiteAuditWizard() {
       const res = await fetch('/api/analyze-brand', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: data.url }),
+        body: JSON.stringify({
+          url: data.url,
+          ...(claudeApiKey.trim() ? { anthropicApiKey: claudeApiKey.trim() } : {}),
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'AI analysis failed');
@@ -390,6 +394,46 @@ export function SiteAuditWizard() {
           />
         </div>
       )}
+      <div style={{ marginTop: 'var(--space-8)' }}>
+        <label
+          htmlFor="claude-api-key"
+          className="ch-type-system-text-sm"
+          style={{
+            display: 'block',
+            marginBottom: 10,
+            color: 'rgba(5, 5, 5, 0.88)',
+            letterSpacing: '-0.25px',
+          }}
+        >
+          Claude API key
+          <span
+            className="ch-type-system-text-xs"
+            style={{ marginLeft: 8, opacity: 0.5, fontWeight: 400 }}
+          >
+            for brand summary
+          </span>
+        </label>
+        <input
+          id="claude-api-key"
+          type="password"
+          value={claudeApiKey}
+          onChange={(e) => setClaudeApiKey(e.target.value)}
+          placeholder="sk-ant-…"
+          autoComplete="off"
+          style={{
+            width: '100%',
+            border: 'none',
+            borderBottom: '1px solid rgba(5, 5, 5, 0.12)',
+            borderRadius: 0,
+            padding: '10px 0 12px',
+            fontSize: 16,
+            fontFamily: 'var(--font-system)',
+            background: 'transparent',
+            outline: 'none',
+            boxSizing: 'border-box',
+          }}
+        />
+      </div>
       {scrapeError && (
         <p className="ch-error-box" style={{ marginTop: 'var(--space-4)' }}>
           {scrapeError}
@@ -452,6 +496,28 @@ export function SiteAuditWizard() {
         {phase === 'guide' && data && selections && stylePayload ? (
           <div style={{ width: '100%', maxWidth: 780 }}>
             <StyleGuidePreview payload={stylePayload} onSectionClick={(s) => setPanel(s)} />
+          </div>
+        ) : scrapeLoading ? (
+          <div style={{ width: '100%', maxWidth: 780 }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                gap: 32,
+              }}
+            >
+              {[0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="sk-pulse"
+                  style={{ aspectRatio: '1', borderRadius: 12 }}
+                />
+              ))}
+            </div>
+            <div
+              className="sk-pulse"
+              style={{ marginTop: 32, height: 400, borderRadius: 12 }}
+            />
           </div>
         ) : (
           <div
@@ -1066,8 +1132,9 @@ export function SiteAuditWizard() {
           {panel === 'brand' && (
             <section>
               <p className="ch-type-system-text-sm" style={{ marginBottom: 'var(--space-6)' }}>
-                Optional AI pass (OpenAI). Runs only when you click the button — not during the
-                scrape.
+                Optional AI pass. Paste your Claude API key in the left panel to enable this, or
+                set <code className="font-mono">ANTHROPIC_API_KEY</code> in .env.local. Runs only
+                when you click the button — not during the scrape.
               </p>
               <button
                 type="button"

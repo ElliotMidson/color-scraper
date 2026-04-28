@@ -3,8 +3,9 @@ import type { BrandAnalysisResult } from '@/types/extraction';
 const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini';
 const DEFAULT_ANTHROPIC_MODEL = 'claude-3-5-haiku-20241022';
 
-function anthropicApiKey(): string | undefined {
+function anthropicApiKey(override?: string): string | undefined {
   return (
+    override?.trim() ||
     process.env.ANTHROPIC_API_KEY?.trim() ||
     process.env.CLAUDE_API_KEY?.trim() ||
     undefined
@@ -13,10 +14,12 @@ function anthropicApiKey(): string | undefined {
 
 type Provider = 'openai' | 'anthropic';
 
-function resolveProvider(): Provider {
+type KeyOverrides = { anthropicApiKey?: string };
+
+function resolveProvider(overrides?: KeyOverrides): Provider {
   const explicit = process.env.BRAND_AI_PROVIDER?.trim().toLowerCase();
   if (explicit === 'anthropic' || explicit === 'claude') {
-    if (!anthropicApiKey()) {
+    if (!anthropicApiKey(overrides?.anthropicApiKey)) {
       throw new Error(
         'BRAND_AI_PROVIDER requests Claude but ANTHROPIC_API_KEY (or CLAUDE_API_KEY) is not set'
       );
@@ -29,6 +32,7 @@ function resolveProvider(): Provider {
     }
     return 'openai';
   }
+  if (overrides?.anthropicApiKey?.trim()) return 'anthropic';
   if (process.env.OPENAI_API_KEY?.trim()) return 'openai';
   if (anthropicApiKey()) return 'anthropic';
   throw new Error('No AI provider configured');
@@ -94,7 +98,8 @@ function parseJsonFromModelText(content: string): unknown {
 
 async function analyzeWithOpenAI(
   pageUrl: string,
-  pageText: string
+  pageText: string,
+  _overrides?: KeyOverrides
 ): Promise<{ brand: BrandAnalysisResult; model: string }> {
   const apiKey = process.env.OPENAI_API_KEY!.trim();
   const model = process.env.OPENAI_MODEL?.trim() || DEFAULT_OPENAI_MODEL;
@@ -143,9 +148,10 @@ async function analyzeWithOpenAI(
 
 async function analyzeWithAnthropic(
   pageUrl: string,
-  pageText: string
+  pageText: string,
+  overrides?: KeyOverrides
 ): Promise<{ brand: BrandAnalysisResult; model: string }> {
-  const apiKey = anthropicApiKey()!;
+  const apiKey = anthropicApiKey(overrides?.anthropicApiKey)!;
   const model =
     process.env.ANTHROPIC_MODEL?.trim() ||
     process.env.CLAUDE_MODEL?.trim() ||
@@ -193,8 +199,9 @@ async function analyzeWithAnthropic(
   return { brand: parseBrandJson(parsed), model };
 }
 
-export function isBrandAiConfigured(): boolean {
+export function isBrandAiConfigured(overrides?: KeyOverrides): boolean {
   return !!(
+    overrides?.anthropicApiKey?.trim() ||
     process.env.OPENAI_API_KEY?.trim() ||
     anthropicApiKey()
   );
@@ -205,15 +212,16 @@ export function isBrandAiConfigured(): boolean {
  */
 export async function analyzeBrandFromPageText(
   pageUrl: string,
-  pageText: string
+  pageText: string,
+  overrides?: KeyOverrides
 ): Promise<{ brand: BrandAnalysisResult; model: string }> {
   if (!pageText.trim()) {
     throw new Error('No readable text was extracted from the page');
   }
 
-  const provider = resolveProvider();
+  const provider = resolveProvider(overrides);
   if (provider === 'openai') {
-    return analyzeWithOpenAI(pageUrl, pageText);
+    return analyzeWithOpenAI(pageUrl, pageText, overrides);
   }
-  return analyzeWithAnthropic(pageUrl, pageText);
+  return analyzeWithAnthropic(pageUrl, pageText, overrides);
 }
