@@ -25,6 +25,7 @@ import {
 import { ImagePreviewModal } from '@/components/ImagePreviewModal';
 import { InlineSvgPreview } from '@/components/InlineSvgPreview';
 import { StyleGuidePreview, type StyleGuideSection } from './StyleGuidePreview';
+import { hexLuminance, logoNeedsDarkBg } from '@/lib/logoUtils';
 
 type GuidePanel = null | StyleGuideSection;
 type Phase = 'url' | 'guide';
@@ -622,6 +623,12 @@ export function SiteAuditWizard() {
                 {data.logosAndMarks.map((l) => {
                   const id = logoEntryId(l);
                   const selected = selections.keptLogoIds.has(id);
+                  const pageBgDark = (() => {
+                    const bg = stylePayload?.colorsByRole.find((g) => g.role === 'pageBackground');
+                    if (!bg?.entries.length) return false;
+                    return hexLuminance(normalizeColorHex(bg.entries[0].hex)) < 0.15;
+                  })();
+                  const darkBg = logoNeedsDarkBg(l, pageBgDark);
                   return (
                     <div
                       key={id}
@@ -653,35 +660,37 @@ export function SiteAuditWizard() {
                           color: 'inherit',
                         }}
                       >
-                        {l.url && thumbByUrl.has(l.url) && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={thumbByUrl.get(l.url)}
-                            alt=""
-                            style={{
-                              marginTop: 'var(--space-3)',
-                              maxHeight: '72px',
-                              objectFit: 'contain',
-                            }}
-                          />
-                        )}
-                        {l.url && /\.svg(\?|$)/i.test(l.url) && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={l.url}
-                            alt=""
-                            style={{
-                              marginTop: 'var(--space-3)',
-                              maxHeight: '72px',
-                              objectFit: 'contain',
-                            }}
-                          />
-                        )}
-                        {l.inlineSvgPreview && l.kind === 'svg-inline' && (
-                          <div style={{ marginTop: 'var(--space-3)' }}>
-                            <InlineSvgPreview svgMarkup={l.inlineSvgPreview} maxHeight={88} />
-                          </div>
-                        )}
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 'var(--space-3)',
+                            borderRadius: 8,
+                            background: darkBg ? '#0c0a08' : 'var(--color-surface-secondary)',
+                            minHeight: 88,
+                          }}
+                        >
+                          {l.url && thumbByUrl.has(l.url) && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={thumbByUrl.get(l.url)}
+                              alt=""
+                              style={{ maxHeight: '72px', objectFit: 'contain' }}
+                            />
+                          )}
+                          {l.url && /\.svg(\?|$)/i.test(l.url) && !thumbByUrl.has(l.url) && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={l.url}
+                              alt=""
+                              style={{ maxHeight: '72px', objectFit: 'contain' }}
+                            />
+                          )}
+                          {l.inlineSvgPreview && l.kind === 'svg-inline' && (
+                            <InlineSvgPreview svgMarkup={l.inlineSvgPreview} maxHeight={72} />
+                          )}
+                        </div>
                         <p
                           className="ch-type-system-text-xs"
                           style={{ marginTop: 'var(--space-2)' }}
@@ -864,15 +873,31 @@ export function SiteAuditWizard() {
 
           {panel === 'fonts' && (
             <section>
+              {/* Inject @font-face for all fonts so previews render correctly */}
+              <style dangerouslySetInnerHTML={{
+                __html: data.fonts.map((f, i) => {
+                  if (!f.embeddedFont) return '';
+                  const alias = `__PanelFont_${i}`;
+                  const u = JSON.stringify(f.embeddedFont.dataUrl);
+                  const fmt = f.embeddedFont.format === 'woff2' ? ` format('woff2')`
+                    : f.embeddedFont.format === 'woff' ? ` format('woff')`
+                    : f.embeddedFont.format === 'ttf' ? ` format('truetype')`
+                    : f.embeddedFont.format === 'otf' ? ` format('opentype')` : '';
+                  return `@font-face{font-family:'${alias}';src:url(${u})${fmt};font-display:swap;}`;
+                }).join('')
+              }} />
               <p className="ch-type-system-text-sm" style={{ marginBottom: 'var(--space-6)' }}>
                 We try to download webfont files from captured <code className="font-mono">@font-face</code>{' '}
                 URLs for the style guide. If the browser couldn&apos;t read CSS (cross-origin) or the host
                 blocks fetches, you&apos;ll see a note — upload licensed files when needed.
               </p>
               <ul style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                {data.fonts.map((f) => {
+                {data.fonts.map((f, fontIndex) => {
                   const id = fontId(f.familyStack);
                   const selected = selections.keptFontIds.has(id);
+                  const previewFamily = f.embeddedFont
+                    ? `'__PanelFont_${fontIndex}', ${f.familyStack}`
+                    : f.familyStack;
                   return (
                     <li key={id}>
                       <button
@@ -891,6 +916,35 @@ export function SiteAuditWizard() {
                           cursor: 'pointer',
                         }}
                       >
+                        <div style={{
+                          padding: 'var(--space-4)',
+                          borderRadius: 8,
+                          background: 'var(--color-surface-secondary)',
+                          marginBottom: 'var(--space-1)',
+                        }}>
+                          <p style={{
+                            fontFamily: previewFamily,
+                            fontSize: 36,
+                            lineHeight: 1.1,
+                            fontWeight: 400,
+                            color: '#0c0a08',
+                            margin: '0 0 4px',
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap',
+                            textOverflow: 'ellipsis',
+                          }}>
+                            The quick brown fox
+                          </p>
+                          <p style={{
+                            fontFamily: previewFamily,
+                            fontSize: 14,
+                            lineHeight: 1.5,
+                            color: 'rgba(5,5,5,0.55)',
+                            margin: 0,
+                          }}>
+                            ABCDEFGHIJKLMNOPQRSTUVWXYZ · 0123456789
+                          </p>
+                        </div>
                         <div
                           style={{
                             display: 'flex',
@@ -949,6 +1003,31 @@ export function SiteAuditWizard() {
                 Same semantic groupings as the scrape. Click to exclude colors you don&apos;t want in
                 the guide.
               </p>
+              {stylePayload && (stylePayload.brandColors.primary || stylePayload.brandColors.secondary || stylePayload.brandColors.tertiary) && (
+                <div style={{ marginBottom: 'var(--space-8)' }}>
+                  <p className="ch-type-system-label-xs" style={{ marginBottom: 'var(--space-3)' }}>Brand colors</p>
+                  <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+                    {([
+                      { label: 'Primary', hex: stylePayload.brandColors.primary },
+                      { label: 'Secondary', hex: stylePayload.brandColors.secondary },
+                      { label: 'Tertiary', hex: stylePayload.brandColors.tertiary },
+                    ] as { label: string; hex: string | null }[]).filter((b) => b.hex).map(({ label, hex }) => (
+                      <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                        <div style={{
+                          width: 28, height: 28, borderRadius: 6,
+                          background: hex!,
+                          border: '1px solid rgba(5,5,5,0.08)',
+                          flexShrink: 0,
+                        }} />
+                        <div>
+                          <p className="ch-type-system-label-xs" style={{ margin: 0 }}>{label}</p>
+                          <p className="ch-type-system-text-xs" style={{ margin: 0, opacity: 0.6 }}>{hex}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-10)' }}>
                 {colorsByRole.map(({ role, label, entries }) => (
                   <div key={role}>

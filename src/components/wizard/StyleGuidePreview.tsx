@@ -7,6 +7,7 @@ import { normalizeColorHex } from '@/lib/wizardIds';
 import { IMAGERY_ROLE_LABELS, IMAGERY_ROLE_ORDER } from '@/lib/wizardLabels';
 import type { FontEntry, ImageryEntry, ImageryRole, LogoOrMarkEntry } from '@/types/extraction';
 import type { StyleGuidePayload } from '@/types/wizard';
+import { hexLuminance, logoNeedsDarkBg } from '@/lib/logoUtils';
 
 export type StyleGuideSection = 'logos' | 'fonts' | 'colors' | 'imagery' | 'brand';
 
@@ -54,40 +55,6 @@ const BENTO_SQUARE: CSSProperties = {
   width: '100%',
   minWidth: 0,
 };
-
-function hexLuminance(hex: string): number {
-  if (hex.length !== 7) return 1;
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-  const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
-  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-}
-
-/** Returns true when an inline SVG has no dark fills/strokes (i.e. it's a light/white logo). */
-function svgIsLight(markup: string): boolean {
-  const re = /(?:fill|stroke)=["']([^"']+)["']/gi;
-  let m: RegExpMatchArray | null;
-  let hasDark = false;
-  while ((m = re.exec(markup)) !== null) {
-    const v = m[1].trim().toLowerCase();
-    if (v === 'none' || v === 'transparent' || v === 'currentcolor') continue;
-    if (v.startsWith('#')) {
-      const expanded = v.length === 4
-        ? '#' + v[1] + v[1] + v[2] + v[2] + v[3] + v[3]
-        : v;
-      if (hexLuminance(expanded) < 0.35) { hasDark = true; break; }
-    }
-  }
-  return !hasDark;
-}
-
-function logoNeedsDarkBg(logo: LogoOrMarkEntry, pageBgDark: boolean): boolean {
-  if (logo.kind === 'svg-inline' && logo.inlineSvgPreview) {
-    return svgIsLight(logo.inlineSvgPreview);
-  }
-  return pageBgDark;
-}
 
 /** Tone-of-voice gradient (Figma ~94.64deg, black → light). */
 const BRAND_GRADIENT_TEXT: CSSProperties = {
@@ -795,46 +762,6 @@ export function StyleGuidePreview({ payload, onSectionClick }: Props) {
           thumbnailByUrl={payload.thumbnailByUrl}
           onBackgroundClick={onSectionClick ? () => onSectionClick('imagery') : undefined}
         />
-      )}
-
-      {/* Secondary fonts (after first) — compact row */}
-      {payload.fonts.length > 1 && (
-        <div
-          style={{
-            marginTop: SG.gap,
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: SG.gap,
-          }}
-        >
-          {payload.fonts.slice(1).map((f, idx) => {
-            const i = idx + 1;
-            return (
-              <div
-                key={f.familyStack}
-                style={{
-                  ...tileBase,
-                  padding: SG.tilePadMd,
-                  flex: '1 1 200px',
-                }}
-              >
-                <p
-                  style={{
-                    fontFamily: previewFontStack(f, i),
-                    fontSize: 16,
-                    color: SG.ink,
-                    margin: 0,
-                  }}
-                >
-                  {f.familyStack.split(',')[0]?.replace(/["']/g, '').trim()}
-                </p>
-                <p className="ch-type-system-text-xs" style={{ marginTop: 8, color: SG.labelMuted }}>
-                  {f.familyStack}
-                </p>
-              </div>
-            );
-          })}
-        </div>
       )}
 
       {payload.brand && (
