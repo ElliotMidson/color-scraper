@@ -997,50 +997,75 @@ export function SiteAuditWizard() {
             </section>
           )}
 
-          {panel === 'colors' && (
+          {panel === 'colors' && stylePayload && (
             <section>
-              <p className="ch-type-system-text-sm" style={{ marginBottom: 'var(--space-6)' }}>
-                Same semantic groupings as the scrape. Click to exclude colors you don&apos;t want in
-                the guide.
-              </p>
-              {stylePayload && (stylePayload.brandColors.primary || stylePayload.brandColors.secondary || stylePayload.brandColors.tertiary) && (
-                <div style={{ marginBottom: 'var(--space-8)' }}>
-                  <p className="ch-type-system-label-xs" style={{ marginBottom: 'var(--space-3)' }}>Brand colors</p>
-                  <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-                    {([
-                      { label: 'Primary', hex: stylePayload.brandColors.primary },
-                      { label: 'Secondary', hex: stylePayload.brandColors.secondary },
-                      { label: 'Tertiary', hex: stylePayload.brandColors.tertiary },
-                    ] as { label: string; hex: string | null }[]).filter((b) => b.hex).map(({ label, hex }) => (
-                      <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                        <div style={{
-                          width: 28, height: 28, borderRadius: 6,
-                          background: hex!,
-                          border: '1px solid rgba(5,5,5,0.08)',
-                          flexShrink: 0,
-                        }} />
-                        <div>
-                          <p className="ch-type-system-label-xs" style={{ margin: 0 }}>{label}</p>
-                          <p className="ch-type-system-text-xs" style={{ margin: 0, opacity: 0.6 }}>{hex}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-10)' }}>
-                {colorsByRole.map(({ role, label, entries }) => (
-                  <div key={role}>
-                    <p className="ch-type-system-label-xs" style={{ marginBottom: 'var(--space-4)' }}>
-                      {label}
-                    </p>
-                    <div
+              {/* Brand colors — Primary / Secondary / Tertiary */}
+              {(stylePayload.brandColors.primary || stylePayload.brandColors.secondary || stylePayload.brandColors.tertiary) && (() => {
+                const brandSlots = [
+                  { label: 'Primary',   hex: stylePayload.brandColors.primary },
+                  { label: 'Secondary', hex: stylePayload.brandColors.secondary },
+                  { label: 'Tertiary',  hex: stylePayload.brandColors.tertiary },
+                ].filter((s): s is { label: string; hex: string } => !!s.hex);
+
+                return (
+                  <div style={{ marginBottom: 'var(--space-8)' }}>
+                    <p
                       style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-                        gap: 'var(--space-3)',
+                        fontSize: 11, fontWeight: 600, letterSpacing: '0.07em',
+                        textTransform: 'uppercase', color: 'rgba(5,5,5,0.38)',
+                        marginBottom: 'var(--space-4)',
                       }}
                     >
+                      Brand colors
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {brandSlots.map(({ label, hex }) => {
+                        const matched = data.semanticColors.find(
+                          (c) => c.hex.toUpperCase() === hex.toUpperCase()
+                        );
+                        const id = colorSelectionId(hex);
+                        const selected = selections.keptColorIds.has(id);
+                        return matched ? (
+                          <ColorSwatch
+                            key={label}
+                            entry={matched}
+                            label={label}
+                            selected={selected}
+                            onToggle={() => toggleColorId(id)}
+                            swatchSize={56}
+                          />
+                        ) : (
+                          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '6px 8px' }}>
+                            <div style={{ width: 56, height: 56, borderRadius: 14, background: hex, border: '1px solid rgba(5,5,5,0.08)', flexShrink: 0 }} />
+                            <div>
+                              <p style={{ margin: 0, fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'rgba(5,5,5,0.45)' }}>{label}</p>
+                              <p style={{ margin: 0, fontSize: 13, fontWeight: 500, fontFamily: 'monospace', color: 'rgba(5,5,5,0.65)' }}>{hex.toUpperCase()}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Divider */}
+              <div style={{ height: 1, background: 'rgba(5,5,5,0.06)', marginBottom: 'var(--space-8)' }} />
+
+              {/* All colors grouped by semantic role */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
+                {colorsByRole.map(({ role, label, entries }) => (
+                  <div key={role}>
+                    <p
+                      style={{
+                        fontSize: 11, fontWeight: 600, letterSpacing: '0.07em',
+                        textTransform: 'uppercase', color: 'rgba(5,5,5,0.38)',
+                        marginBottom: 'var(--space-2)',
+                      }}
+                    >
+                      {label}
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       {entries.map((entry) => {
                         const id = colorSelectionId(entry.hex);
                         return (

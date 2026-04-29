@@ -1,91 +1,99 @@
+'use client';
+
 import type { SemanticColorEntry } from '@/types/extraction';
 
 interface Props {
   entry: SemanticColorEntry;
+  label?: string;
   selected?: boolean;
   onToggle?: () => void;
+  swatchSize?: number;
 }
 
-export function ColorSwatch({ entry, selected = true, onToggle }: Props) {
-  const r = parseInt(entry.hex.slice(1, 3), 16);
-  const g = parseInt(entry.hex.slice(3, 5), 16);
-  const b = parseInt(entry.hex.slice(5, 7), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  const overlayHex = luminance > 0.5 ? '#000000' : '#ffffff';
+export function ColorSwatch({ entry, label, selected = true, onToggle, swatchSize = 44 }: Props) {
+  const hex = entry.hex.toUpperCase();
+  const displayLabel = (label ?? entry.role).toUpperCase();
 
-  const body = (
-    <>
+  const inner = (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
+        padding: '6px 8px',
+        borderRadius: 8,
+        opacity: selected ? 1 : 0.35,
+        transition: 'opacity 0.15s',
+        width: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
       <div
-        className="w-full h-20 relative"
-        style={{ backgroundColor: entry.hex }}
-      >
-        <span
-          className="absolute inset-0 flex items-center justify-center font-mono text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity ch-type-system-text-xs"
-          style={{ color: overlayHex }}
-        >
-          {entry.hex}
-        </span>
-      </div>
-      <div style={{ padding: 'var(--space-3)' }}>
+        style={{
+          width: swatchSize,
+          height: swatchSize,
+          borderRadius: Math.round(swatchSize * 0.25),
+          background: hex,
+          border: '1px solid rgba(5,5,5,0.08)',
+          flexShrink: 0,
+        }}
+      />
+      <div style={{ minWidth: 0 }}>
         <p
-          className="font-mono text-xs font-semibold tracking-tight"
-          style={{ color: 'var(--color-text-primary)' }}
+          style={{
+            margin: 0,
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: '0.07em',
+            textTransform: 'uppercase',
+            color: 'rgba(5,5,5,0.45)',
+            lineHeight: 1.3,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
         >
-          {entry.hex}
-        </p>
-        <p className="ch-type-system-label-xs" style={{ marginTop: 'var(--space-1)' }}>
-          {entry.role}
+          {displayLabel}
         </p>
         <p
-          className="ch-type-system-text-xs truncate"
-          style={{ marginTop: 'var(--space-1)' }}
-          title={entry.source}
+          style={{
+            margin: 0,
+            fontSize: 13,
+            fontWeight: 500,
+            fontFamily: 'monospace',
+            color: 'rgba(5,5,5,0.65)',
+            lineHeight: 1.5,
+          }}
         >
-          {entry.property} · {entry.source}
+          {hex}
         </p>
       </div>
-    </>
+    </div>
   );
 
   if (onToggle) {
     return (
-      <div
-        className="group ch-swatch-selectable-wrap"
-        data-selected={selected ? 'true' : 'false'}
+      <button
+        type="button"
+        onClick={onToggle}
+        title={selected ? 'Click to exclude' : 'Click to include'}
+        style={{
+          display: 'block',
+          width: '100%',
+          background: 'none',
+          border: 'none',
+          padding: 0,
+          cursor: 'pointer',
+          textAlign: 'left',
+          font: 'inherit',
+          color: 'inherit',
+          borderRadius: 8,
+        }}
       >
-        <button type="button" className="ch-swatch-selectable-hit" onClick={onToggle}>
-          {body}
-        </button>
-        <div
-          style={{
-            padding: '0 var(--space-3) var(--space-3)',
-            display: 'flex',
-            justifyContent: 'flex-end',
-          }}
-        >
-          <label
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              cursor: 'pointer',
-              padding: 'var(--space-1)',
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={selected}
-              onChange={onToggle}
-              aria-label="Include in style guide"
-            />
-          </label>
-        </div>
-      </div>
+        {inner}
+      </button>
     );
   }
 
-  return (
-    <div className="group ch-card-selectable" data-selected="true">
-      {body}
-    </div>
-  );
+  return inner;
 }
