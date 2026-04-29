@@ -25,7 +25,7 @@ import {
 import { ImagePreviewModal } from '@/components/ImagePreviewModal';
 import { InlineSvgPreview } from '@/components/InlineSvgPreview';
 import { StyleGuidePreview, type StyleGuideSection } from './StyleGuidePreview';
-import { hexLuminance, logoNeedsDarkBg } from '@/lib/logoUtils';
+import { hexLuminance, getLogoBg } from '@/lib/logoUtils';
 
 type GuidePanel = null | StyleGuideSection;
 type Phase = 'url' | 'guide';
@@ -628,7 +628,7 @@ export function SiteAuditWizard() {
                     if (!bg?.entries.length) return false;
                     return hexLuminance(normalizeColorHex(bg.entries[0].hex)) < 0.15;
                   })();
-                  const darkBg = logoNeedsDarkBg(l, pageBgDark);
+                  const logoBg = getLogoBg(l, pageBgDark);
                   return (
                     <div
                       key={id}
@@ -667,7 +667,7 @@ export function SiteAuditWizard() {
                             justifyContent: 'center',
                             padding: 'var(--space-3)',
                             borderRadius: 8,
-                            background: darkBg ? '#0c0a08' : 'var(--color-surface-secondary)',
+                            background: logoBg ?? 'var(--color-surface-secondary)',
                             minHeight: 88,
                           }}
                         >

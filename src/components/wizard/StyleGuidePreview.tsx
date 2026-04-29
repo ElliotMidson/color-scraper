@@ -7,7 +7,7 @@ import { normalizeColorHex } from '@/lib/wizardIds';
 import { IMAGERY_ROLE_LABELS, IMAGERY_ROLE_ORDER } from '@/lib/wizardLabels';
 import type { FontEntry, ImageryEntry, ImageryRole, LogoOrMarkEntry } from '@/types/extraction';
 import type { StyleGuidePayload } from '@/types/wizard';
-import { hexLuminance, logoNeedsDarkBg } from '@/lib/logoUtils';
+import { hexLuminance, getLogoBg } from '@/lib/logoUtils';
 
 export type StyleGuideSection = 'logos' | 'fonts' | 'colors' | 'imagery' | 'brand';
 
@@ -451,7 +451,8 @@ export function StyleGuidePreview({ payload, onSectionClick }: Props) {
         {/* Logo tile */}
         {(payload.logos.length > 0 || click) && (() => {
           const firstScraped = payload.logos.find((l) => l.scraped)?.scraped;
-          const needsDark = firstScraped ? logoNeedsDarkBg(firstScraped, pageBgDark) : false;
+          const logoBg = firstScraped ? getLogoBg(firstScraped, pageBgDark) : null;
+          const tileOnDark = logoBg === '#0c0a08';
           return tileShell(
             click,
             onSectionClick ? () => onSectionClick('logos') : undefined,
@@ -466,10 +467,10 @@ export function StyleGuidePreview({ payload, onSectionClick }: Props) {
               justifyContent: 'center',
               padding: SG.tilePadLg,
               gap: 20,
-              background: needsDark ? SG.ink : SG.card,
+              background: logoBg ?? SG.card,
             },
             <>
-              <TileLabel variant={needsDark ? 'light' : 'dark'}>Brand</TileLabel>
+              <TileLabel variant={tileOnDark ? 'light' : 'dark'}>Brand</TileLabel>
               {payload.logos.length === 0 ? (
                 <p className="ch-type-system-text-sm" style={{ color: SG.labelMuted, textAlign: 'center' }}>
                   No logo in guide — tap to add or choose marks
