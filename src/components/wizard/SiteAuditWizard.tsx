@@ -21,6 +21,9 @@ import {
   prioritizeButtonFirst,
   ROLE_LABELS,
   ROLE_ORDER,
+  ROLE_SECTION,
+  SECTION_LABELS,
+  SECTION_ORDER,
 } from '@/lib/wizardLabels';
 import { ImagePreviewModal } from '@/components/ImagePreviewModal';
 import { InlineSvgPreview } from '@/components/InlineSvgPreview';
@@ -1004,87 +1007,55 @@ export function SiteAuditWizard() {
 
           {panel === 'colors' && stylePayload && (
             <section>
-              {/* Brand colors — Primary / Secondary / Tertiary */}
-              {(stylePayload.brandColors.primary || stylePayload.brandColors.secondary || stylePayload.brandColors.tertiary) && (() => {
-                const brandSlots = [
-                  { label: 'Primary',   hex: stylePayload.brandColors.primary },
-                  { label: 'Secondary', hex: stylePayload.brandColors.secondary },
-                  { label: 'Tertiary',  hex: stylePayload.brandColors.tertiary },
-                ].filter((s): s is { label: string; hex: string } => !!s.hex);
-
-                return (
-                  <div style={{ marginBottom: 'var(--space-8)' }}>
-                    <p
-                      style={{
-                        fontSize: 11, fontWeight: 600, letterSpacing: '0.07em',
-                        textTransform: 'uppercase', color: 'rgba(5,5,5,0.38)',
-                        marginBottom: 'var(--space-4)',
-                      }}
-                    >
-                      Brand colors
-                    </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      {brandSlots.map(({ label, hex }) => {
-                        const matched = data.semanticColors.find(
-                          (c) => c.hex.toUpperCase() === hex.toUpperCase()
-                        );
-                        const id = colorSelectionId(hex);
-                        const selected = selections.keptColorIds.has(id);
-                        return matched ? (
-                          <ColorSwatch
-                            key={label}
-                            entry={matched}
-                            label={label}
-                            selected={selected}
-                            onToggle={() => toggleColorId(id)}
-                            swatchSize={56}
-                          />
-                        ) : (
-                          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '6px 8px' }}>
-                            <div style={{ width: 56, height: 56, borderRadius: 14, background: hex, border: '1px solid rgba(5,5,5,0.08)', flexShrink: 0 }} />
-                            <div>
-                              <p style={{ margin: 0, fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'rgba(5,5,5,0.45)' }}>{label}</p>
-                              <p style={{ margin: 0, fontSize: 13, fontWeight: 500, fontFamily: 'monospace', color: 'rgba(5,5,5,0.65)' }}>{hex.toUpperCase()}</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-10)' }}>
+                {SECTION_ORDER.map((section) => {
+                  const sectionGroups = colorsByRole.filter(
+                    (g) => ROLE_SECTION[g.role as keyof typeof ROLE_SECTION] === section
+                  );
+                  if (sectionGroups.length === 0) return null;
+                  return (
+                    <div key={section}>
+                      <p
+                        style={{
+                          fontSize: 13, fontWeight: 600,
+                          color: 'rgba(5,5,5,0.75)',
+                          marginBottom: 'var(--space-4)',
+                          letterSpacing: '-0.01em',
+                        }}
+                      >
+                        {SECTION_LABELS[section]}
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+                        {sectionGroups.map(({ role, label, entries }) => (
+                          <div key={role}>
+                            <p
+                              style={{
+                                fontSize: 10, fontWeight: 600, letterSpacing: '0.07em',
+                                textTransform: 'uppercase', color: 'rgba(5,5,5,0.35)',
+                                marginBottom: 'var(--space-1)',
+                              }}
+                            >
+                              {label}
+                            </p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              {entries.map((entry) => {
+                                const id = colorSelectionId(entry.hex);
+                                return (
+                                  <ColorSwatch
+                                    key={id}
+                                    entry={entry}
+                                    selected={selections.keptColorIds.has(id)}
+                                    onToggle={() => toggleColorId(id)}
+                                  />
+                                );
+                              })}
                             </div>
                           </div>
-                        );
-                      })}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                );
-              })()}
-
-              {/* Divider */}
-              <div style={{ height: 1, background: 'rgba(5,5,5,0.06)', marginBottom: 'var(--space-8)' }} />
-
-              {/* All colors grouped by semantic role */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
-                {colorsByRole.map(({ role, label, entries }) => (
-                  <div key={role}>
-                    <p
-                      style={{
-                        fontSize: 11, fontWeight: 600, letterSpacing: '0.07em',
-                        textTransform: 'uppercase', color: 'rgba(5,5,5,0.38)',
-                        marginBottom: 'var(--space-2)',
-                      }}
-                    >
-                      {label}
-                    </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      {entries.map((entry) => {
-                        const id = colorSelectionId(entry.hex);
-                        return (
-                          <ColorSwatch
-                            key={id}
-                            entry={entry}
-                            selected={selections.keptColorIds.has(id)}
-                            onToggle={() => toggleColorId(id)}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           )}

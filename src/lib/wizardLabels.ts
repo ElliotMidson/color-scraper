@@ -1,5 +1,28 @@
 import type { ImageryRole, SemanticColorRole } from '@/types/extraction';
 
+export type ColorSection = 'brand' | 'surface' | 'text';
+
+export const ROLE_SECTION: Record<SemanticColorRole, ColorSection> = {
+  headerCta: 'brand',
+  button: 'brand',
+  link: 'brand',
+  heading: 'text',
+  subheading: 'text',
+  body: 'text',
+  pageBackground: 'surface',
+  sectionBackground: 'surface',
+  card: 'surface',
+  border: 'surface',
+};
+
+export const SECTION_LABELS: Record<ColorSection, string> = {
+  brand: 'Brand',
+  surface: 'Surface',
+  text: 'Text',
+};
+
+export const SECTION_ORDER: ColorSection[] = ['brand', 'surface', 'text'];
+
 export const ROLE_ORDER: SemanticColorRole[] = [
   'pageBackground',
   'sectionBackground',

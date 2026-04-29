@@ -4,7 +4,15 @@ import type { CSSProperties, ReactNode } from 'react';
 import { useMemo } from 'react';
 import { InlineSvgPreview } from '@/components/InlineSvgPreview';
 import { normalizeColorHex } from '@/lib/wizardIds';
-import { IMAGERY_ROLE_LABELS, IMAGERY_ROLE_ORDER } from '@/lib/wizardLabels';
+import {
+  IMAGERY_ROLE_LABELS,
+  IMAGERY_ROLE_ORDER,
+  ROLE_LABELS,
+  ROLE_SECTION,
+  SECTION_LABELS,
+  SECTION_ORDER,
+} from '@/lib/wizardLabels';
+import type { SemanticColorRole } from '@/types/extraction';
 import type { FontEntry, ImageryEntry, ImageryRole, LogoOrMarkEntry } from '@/types/extraction';
 import type { StyleGuidePayload } from '@/types/wizard';
 import { hexLuminance, getLogoBg } from '@/lib/logoUtils';
@@ -757,6 +765,92 @@ export function StyleGuidePreview({ payload, onSectionClick }: Props) {
             </>
           )}
       </div>
+
+      {/* Color palette — Brand / Surface / Text sections */}
+      {payload.colorsByRole.length > 0 && (
+        <div
+          role={click ? 'presentation' : undefined}
+          onClick={click && onSectionClick ? () => onSectionClick('colors') : undefined}
+          style={{ marginTop: SG.gap, cursor: click ? 'pointer' : undefined }}
+        >
+          {SECTION_ORDER.map((section) => {
+            const sectionGroups = payload.colorsByRole.filter(
+              (g) => ROLE_SECTION[g.role as SemanticColorRole] === section
+            );
+            const allEntries = sectionGroups.flatMap((g) => g.entries);
+            if (allEntries.length === 0) return null;
+            return (
+              <div key={section} style={{ marginBottom: 28 }}>
+                <p
+                  style={{
+                    fontFamily: 'var(--theme-font-body)',
+                    fontSize: 15,
+                    fontWeight: 500,
+                    color: SG.ink,
+                    margin: '0 0 12px',
+                    letterSpacing: '-0.01em',
+                  }}
+                >
+                  {SECTION_LABELS[section]}
+                </p>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                    gap: 12,
+                  }}
+                >
+                  {allEntries.map((entry, i) => {
+                    const hex = entry.hex.toUpperCase();
+                    const lum = hexLuminance(hex);
+                    return (
+                      <div
+                        key={`${hex}-${i}`}
+                        style={{
+                          background: SG.card,
+                          borderRadius: SG.radius,
+                          overflow: 'hidden',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)',
+                        }}
+                      >
+                        <div style={{ height: 100, background: hex, position: 'relative' }}>
+                          <span
+                            style={{
+                              position: 'absolute',
+                              bottom: 8,
+                              left: 10,
+                              fontSize: 10,
+                              fontWeight: 600,
+                              letterSpacing: '0.06em',
+                              textTransform: 'uppercase',
+                              color: lum > 0.35 ? 'rgba(5,5,5,0.45)' : 'rgba(255,255,255,0.55)',
+                            }}
+                          >
+                            {ROLE_LABELS[entry.role as SemanticColorRole] ?? entry.role}
+                          </span>
+                        </div>
+                        <div style={{ padding: '8px 10px 10px' }}>
+                          <p
+                            style={{
+                              margin: 0,
+                              fontSize: 11,
+                              fontWeight: 600,
+                              fontFamily: 'monospace',
+                              color: 'rgba(5,5,5,0.55)',
+                            }}
+                          >
+                            {hex}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Imagery collage — full width, no gutters (hero left + 2×2; 5th cell = +more when needed) */}
       {(flatImagery.length > 0 || click) && (
