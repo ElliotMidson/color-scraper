@@ -1249,8 +1249,22 @@ export function SiteAuditWizard() {
                   {
                     key: 'aboutBrand' as const,
                     label: 'About the brand',
-                    hint: 'Describe your brand and its purpose. Include specifics like visual style and anything a designer would need to keep in mind when creating for you.',
-                    placeholder: 'e.g. We are a fintech startup focused on small business lending. Our visual style is clean and minimal — we use dark navy, white, and a lime accent. Avoid anything that looks corporate or stuffy.',
+                    hint: 'Describe your brand and its purpose. Cover founding story, stage, what you do, tagline, target market, and product tiers. Include visual style notes and anything a designer needs to keep in mind.',
+                    placeholder: `Founded: [year], [city]
+
+Stage: [e.g. Series B, 120 employees]
+
+What they do: [One or two sentences on the core product and who it's for.]
+
+Tagline: "[Your tagline here]"
+
+Target verticals: [e.g. Healthcare, financial services, retail]
+
+Products / Tiers:
+• [Tier 1]: [brief description]
+• [Tier 2]: [brief description]
+
+Visual notes: [e.g. Clean and minimal — dark navy, white, lime accent. Avoid anything corporate or cluttered.]`,
                   },
                   {
                     key: 'brandPersonality' as const,
