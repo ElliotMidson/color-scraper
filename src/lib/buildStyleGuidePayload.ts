@@ -1,5 +1,5 @@
 import type { SiteExtractionResult } from '@/types/extraction';
-import type { StyleGuidePayload, WizardSelections } from '@/types/wizard';
+import type { StyleGuidePayload, VoiceSettings, WizardSelections } from '@/types/wizard';
 import type { BrandAnalysisResult } from '@/types/extraction';
 import { colorSelectionId, fontId, imageId, logoEntryId, normalizeColorHex } from '@/lib/wizardIds';
 import { prioritizeButtonFirst, ROLE_LABELS, ROLE_ORDER } from '@/lib/wizardLabels';
@@ -8,7 +8,8 @@ import { computeBrandColors } from '@/lib/colorUtils';
 export function buildStyleGuidePayload(
   data: SiteExtractionResult,
   s: WizardSelections,
-  brand: BrandAnalysisResult | null
+  brand: BrandAnalysisResult | null,
+  voiceSettings: VoiceSettings
 ): StyleGuidePayload {
   const logos: StyleGuidePayload['logos'] = [];
   data.logosAndMarks.forEach((l, i) => {
@@ -53,5 +54,6 @@ export function buildStyleGuidePayload(
     imagery,
     thumbnailByUrl,
     brand,
+    voiceSettings,
   };
 }

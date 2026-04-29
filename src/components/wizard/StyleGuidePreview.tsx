@@ -282,16 +282,18 @@ function CollageStrip({
 }
 
 function brandVoiceBoardText(payload: StyleGuidePayload): string {
-  if (!payload.brand) {
-    return 'Add a Claude API key and import a URL to generate the brand voice summary.';
+  // Manual input takes priority
+  if (payload.voiceSettings.brandPersonality.trim()) {
+    return payload.voiceSettings.brandPersonality.trim();
   }
-  const { toneOfVoice, keyFeaturesOrServices } = payload.brand;
-  const voice = toneOfVoice.trim();
-  const tail = keyFeaturesOrServices.filter(Boolean).join(', ');
-  if (!voice && !tail) {
-    return 'Brand summary did not return copy yet — run the analysis again from Brand.';
+  // AI fallback
+  if (payload.brand) {
+    const { toneOfVoice, keyFeaturesOrServices } = payload.brand;
+    const voice = toneOfVoice.trim();
+    const tail = keyFeaturesOrServices.filter(Boolean).join(', ');
+    if (voice || tail) return tail ? `${voice}, ${tail}` : voice;
   }
-  return tail ? `${voice}, ${tail}` : voice;
+  return 'Open Tone of voice to describe your brand personality and writing style.';
 }
 
 interface Props {

@@ -7,7 +7,7 @@ import type {
   ImageryRole,
   SiteExtractionResult,
 } from '@/types/extraction';
-import type { LogoUploadId, UploadedLogo, WizardSelections } from '@/types/wizard';
+import type { LogoUploadId, UploadedLogo, VoiceSettings, WizardSelections } from '@/types/wizard';
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_FILES } from '@/types/wizard';
 import { ColorSwatch } from '@/components/ColorSwatch';
 import { buildStyleGuidePayload } from '@/lib/buildStyleGuidePayload';
@@ -35,7 +35,7 @@ const PANEL_TITLES: Record<Exclude<GuidePanel, null>, string> = {
   fonts: 'Fonts',
   colors: 'Colors',
   imagery: 'Imagery',
-  brand: 'Tone of voice & brand',
+  brand: 'Tone of voice',
 };
 
 function svgMarkupToDataUrl(markup: string): string {
@@ -67,6 +67,11 @@ export function SiteAuditWizard() {
   const [brandError, setBrandError] = useState<string | null>(null);
   const [extraUrlsOpen, setExtraUrlsOpen] = useState(false);
   const [claudeApiKey, setClaudeApiKey] = useState('');
+  const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>({
+    aboutBrand: '',
+    brandPersonality: '',
+    slidePreferences: '',
+  });
 
   const thumbByUrl = useMemo(
     () => (data ? new Map(data.thumbnails.map((t) => [t.url, t.dataUrl])) : new Map()),
@@ -284,7 +289,7 @@ export function SiteAuditWizard() {
 
   const stylePayload =
     data && selections
-      ? buildStyleGuidePayload(data, selections, brand?.brand ?? null)
+      ? buildStyleGuidePayload(data, selections, brand?.brand ?? null, voiceSettings)
       : null;
 
   const importRail = (
@@ -1239,73 +1244,74 @@ export function SiteAuditWizard() {
 
           {panel === 'brand' && (
             <section>
-              <p className="ch-type-system-text-sm" style={{ marginBottom: 'var(--space-6)' }}>
-                Optional AI pass. Paste your Claude API key in the left panel to enable this, or
-                set <code className="font-mono">ANTHROPIC_API_KEY</code> in .env.local. Runs only
-                when you click the button — not during the scrape.
-              </p>
-              {!claudeApiKey.trim() && !brand && (
-                <p className="ch-error-box" style={{ marginBottom: 'var(--space-4)' }}>
-                  Please add a Claude API key to run brand summary.
-                </p>
-              )}
-              <button
-                type="button"
-                className="ch-btn-primary"
-                disabled={brandLoading || !claudeApiKey.trim()}
-                onClick={() => void runBrandAnalysis()}
-                style={{ marginBottom: 'var(--space-4)' }}
-              >
-                {brandLoading ? 'Analyzing…' : brand ? 'Run again' : 'Run AI brand summary'}
-              </button>
-              {brandError && <p className="ch-error-box">{brandError}</p>}
-              {brand && (
-                <div
-                  style={{
-                    marginTop: 'var(--space-6)',
-                    padding: 'var(--space-6)',
-                    border: '1px solid var(--color-border-default)',
-                    borderRadius: 'var(--radius-lg)',
-                  }}
-                >
-                  <p className="ch-type-system-text-xs" style={{ marginBottom: 'var(--space-4)' }}>
-                    {brand.model} · {brand.textCharsUsed.toLocaleString()} chars
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-                    <div>
-                      <p className="ch-type-system-label-xs" style={{ marginBottom: 'var(--space-2)' }}>
-                        Tone of voice
-                      </p>
-                      <p className="ch-type-system-text-sm">{brand.brand.toneOfVoice}</p>
-                    </div>
-                    <div>
-                      <p className="ch-type-system-label-xs" style={{ marginBottom: 'var(--space-2)' }}>
-                        What they do
-                      </p>
-                      <p className="ch-type-system-text-sm">{brand.brand.whatTheyDo}</p>
-                    </div>
-                    <div>
-                      <p className="ch-type-system-label-xs" style={{ marginBottom: 'var(--space-2)' }}>
-                        Features / services
-                      </p>
-                      <ul
-                        className="ch-type-system-text-sm"
-                        style={{ paddingLeft: 'var(--space-5)' }}
-                      >
-                        {brand.brand.keyFeaturesOrServices.map((x, j) => (
-                          <li key={j}>{x}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <p className="ch-type-system-label-xs" style={{ marginBottom: 'var(--space-2)' }}>
-                        Pricing
-                      </p>
-                      <p className="ch-type-system-text-sm">{brand.brand.pricingSummary}</p>
-                    </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
+                {([
+                  {
+                    key: 'aboutBrand' as const,
+                    label: 'About the brand',
+                    hint: 'Describe your brand and its purpose. Include specifics like visual style and anything a designer would need to keep in mind when creating for you.',
+                    placeholder: 'e.g. We are a fintech startup focused on small business lending. Our visual style is clean and minimal — we use dark navy, white, and a lime accent. Avoid anything that looks corporate or stuffy.',
+                  },
+                  {
+                    key: 'brandPersonality' as const,
+                    label: 'Brand personality',
+                    hint: 'Describe how your brand sounds and the personality it should convey.',
+                    placeholder: 'e.g. Direct and confident, but never arrogant. We speak plainly — no jargon, no buzzwords. Think trusted advisor, not sales pitch.',
+                  },
+                  {
+                    key: 'slidePreferences' as const,
+                    label: 'Slide writing preferences',
+                    hint: 'Describe how your slides should be written. Include preferred writing style, terms to avoid, or any content rules you follow.',
+                    placeholder: 'e.g. One idea per slide. Bullet points max 8 words each. Avoid the words "leverage", "synergy", and "solution". Always lead with the insight, not the data.',
+                  },
+                ] as { key: keyof VoiceSettings; label: string; hint: string; placeholder: string }[]).map(({ key, label, hint, placeholder }) => (
+                  <div key={key}>
+                    <label
+                      htmlFor={`voice-${key}`}
+                      style={{
+                        display: 'block',
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: 'rgba(5,5,5,0.88)',
+                        marginBottom: 4,
+                        letterSpacing: '-0.15px',
+                      }}
+                    >
+                      {label}
+                    </label>
+                    <p
+                      className="ch-type-system-text-xs"
+                      style={{ marginBottom: 10, color: 'rgba(5,5,5,0.5)', lineHeight: 1.5 }}
+                    >
+                      {hint}
+                    </p>
+                    <textarea
+                      id={`voice-${key}`}
+                      rows={4}
+                      value={voiceSettings[key]}
+                      onChange={(e) =>
+                        setVoiceSettings((prev) => ({ ...prev, [key]: e.target.value }))
+                      }
+                      placeholder={placeholder}
+                      style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        border: 'none',
+                        borderBottom: '1px solid rgba(5,5,5,0.12)',
+                        borderRadius: 0,
+                        padding: '10px 0 12px',
+                        fontSize: 14,
+                        fontFamily: 'var(--font-system)',
+                        lineHeight: 1.6,
+                        background: 'transparent',
+                        outline: 'none',
+                        resize: 'vertical',
+                        color: 'rgba(5,5,5,0.88)',
+                      }}
+                    />
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
             </section>
           )}
 

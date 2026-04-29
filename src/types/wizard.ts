@@ -25,6 +25,12 @@ export interface WizardSelections {
   uploadedLogos: UploadedLogo[];
 }
 
+export interface VoiceSettings {
+  aboutBrand: string;
+  brandPersonality: string;
+  slidePreferences: string;
+}
+
 export interface StyleGuidePayload {
   sourceUrl: string;
   scrapedAt: string;
@@ -35,6 +41,7 @@ export interface StyleGuidePayload {
   imagery: ImageryEntry[];
   thumbnailByUrl: Map<string, string>;
   brand: BrandAnalysisResult | null;
+  voiceSettings: VoiceSettings;
 }
 
 export const MAX_UPLOAD_FILES = 5;
