@@ -9,7 +9,6 @@ import type {
 } from '@/types/extraction';
 import type { LogoUploadId, UploadedLogo, VoiceSettings, WizardSelections } from '@/types/wizard';
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_FILES } from '@/types/wizard';
-import { ColorSwatch } from '@/components/ColorSwatch';
 import { buildStyleGuidePayload } from '@/lib/buildStyleGuidePayload';
 import { downloadImageFromUrl } from '@/lib/imageDownload';
 import { colorSelectionId, fontId, imageId, logoEntryId, normalizeColorHex } from '@/lib/wizardIds';
@@ -1007,51 +1006,103 @@ export function SiteAuditWizard() {
 
           {panel === 'colors' && stylePayload && (
             <section>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-10)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
                 {SECTION_ORDER.map((section) => {
                   const sectionGroups = colorsByRole.filter(
                     (g) => ROLE_SECTION[g.role as keyof typeof ROLE_SECTION] === section
                   );
-                  if (sectionGroups.length === 0) return null;
+                  const allEntries = sectionGroups.flatMap((g) => g.entries);
+                  if (allEntries.length === 0) return null;
                   return (
                     <div key={section}>
                       <p
                         style={{
-                          fontSize: 13, fontWeight: 600,
-                          color: 'rgba(5,5,5,0.75)',
-                          marginBottom: 'var(--space-4)',
+                          fontSize: 15, fontWeight: 500,
+                          color: 'rgba(5,5,5,0.88)',
+                          margin: '0 0 12px',
                           letterSpacing: '-0.01em',
                         }}
                       >
                         {SECTION_LABELS[section]}
                       </p>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-                        {sectionGroups.map(({ role, label, entries }) => (
-                          <div key={role}>
-                            <p
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                          gap: 10,
+                        }}
+                      >
+                        {allEntries.map((entry) => {
+                          const hex = entry.hex.toUpperCase();
+                          const id = colorSelectionId(entry.hex);
+                          const selected = selections.keptColorIds.has(id);
+                          const lum = (() => {
+                            try {
+                              const r = parseInt(hex.slice(1, 3), 16) / 255;
+                              const g = parseInt(hex.slice(3, 5), 16) / 255;
+                              const b = parseInt(hex.slice(5, 7), 16) / 255;
+                              return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                            } catch { return 0.5; }
+                          })();
+                          return (
+                            <button
+                              key={id}
+                              type="button"
+                              onClick={() => toggleColorId(id)}
+                              title={selected ? 'Click to exclude' : 'Click to include'}
                               style={{
-                                fontSize: 10, fontWeight: 600, letterSpacing: '0.07em',
-                                textTransform: 'uppercase', color: 'rgba(5,5,5,0.35)',
-                                marginBottom: 'var(--space-1)',
+                                background: 'none',
+                                border: 'none',
+                                padding: 0,
+                                cursor: 'pointer',
+                                font: 'inherit',
+                                textAlign: 'left',
+                                borderRadius: 10,
+                                opacity: selected ? 1 : 0.35,
+                                transition: 'opacity 0.15s',
                               }}
                             >
-                              {label}
-                            </p>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              {entries.map((entry) => {
-                                const id = colorSelectionId(entry.hex);
-                                return (
-                                  <ColorSwatch
-                                    key={id}
-                                    entry={entry}
-                                    selected={selections.keptColorIds.has(id)}
-                                    onToggle={() => toggleColorId(id)}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ))}
+                              <div
+                                style={{
+                                  background: '#ffffff',
+                                  borderRadius: 10,
+                                  overflow: 'hidden',
+                                  boxShadow: '0 1px 2px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.06)',
+                                }}
+                              >
+                                <div style={{ height: 90, background: hex, position: 'relative' }}>
+                                  <span
+                                    style={{
+                                      position: 'absolute',
+                                      bottom: 7,
+                                      left: 9,
+                                      fontSize: 9,
+                                      fontWeight: 700,
+                                      letterSpacing: '0.07em',
+                                      textTransform: 'uppercase',
+                                      color: lum > 0.35 ? 'rgba(5,5,5,0.45)' : 'rgba(255,255,255,0.6)',
+                                    }}
+                                  >
+                                    {ROLE_LABELS[entry.role as keyof typeof ROLE_LABELS] ?? entry.role}
+                                  </span>
+                                </div>
+                                <div style={{ padding: '7px 9px 9px' }}>
+                                  <p
+                                    style={{
+                                      margin: 0,
+                                      fontSize: 11,
+                                      fontWeight: 600,
+                                      fontFamily: 'monospace',
+                                      color: 'rgba(5,5,5,0.55)',
+                                    }}
+                                  >
+                                    {hex}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   );
